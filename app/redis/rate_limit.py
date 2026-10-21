@@ -14,9 +14,9 @@ async def check_rate_limit(
     current = await redis.incr(key)
 
     if current == 1:
-        await redis.expire(key, settings.RATE_LIMIT_TTL_SECONDS)
+        await redis.expire(key, settings.redis_default_ttl_seconds)
 
     ttl = await redis.ttl(key)
 
-    allowed = current <= settings.RATE_LIMIT_MAX_REQUESTS
+    allowed = current <= settings.rate_limit_max_requests
     return (allowed, current, ttl)

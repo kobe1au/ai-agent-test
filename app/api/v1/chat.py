@@ -13,19 +13,23 @@ from app.services.chat_service import chat_with_ai
 from app.dependencies.auth import get_current_user
 from app.dependencies.llm import MockLLMProvider, get_llm_provider
 from app.dependencies.redis import get_redis_client
-from app.dependencies.rate_limit import check_rate_limit
+from app.dependencies.rate_limit import chat_rate_limit
+from app.llm.base import BaseLLMProvider
+from app.dependencies.llm import get_llm_provider
 
 
 router = APIRouter()
 
-@router.post("/chat", response_model=ApiResponse[ChatResponse],dependencies=[Depends(check_rate_limit)])
+@router.post("/chat", response_model=ApiResponse[ChatResponse],dependencies=[Depends(chat_rate_limit)])
 async def chat(
     request: ChatRequest,
     current_user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
-    redis: Redis = Depends(get_redis_client)
+    redis: Redis = Depends(get_redis_client),
+    llm_provider: BaseLLMProvider = Depends(get_llm_provider),
 ) -> ApiResponse[ChatResponse]:
-    result = await chat_with_ai(request,db=db,redis=redis)
+    # 给service一个和具体的LLM提供者
+    result = await chat_with_ai(request,db=db,redis=redis,llm_provider=llm_provider)
     result.trace_id = f"{result.trace_id}_user_{current_user.user_id}"
 
     return ApiResponse[ChatResponse](
@@ -33,7 +37,7 @@ async def chat(
     )
 
 
-@router.post("/conversations/{conversation_id}/chat", response_model=ApiResponse[ChatResponse],dependencies=[Depends(check_rate_limit)])
+@router.post("/conversations/{conversation_id}/chat", response_model=ApiResponse[ChatResponse],dependencies=[Depends(chat_rate_limit)])
 async def chat_in_conversation(
     request: ChatRequest,
     conversation_id: str = Path(..., description="会话 ID"),
@@ -52,7 +56,7 @@ async def chat_in_conversation(
         data=result
     )
 
-@router.post("/chat/di-demo", response_model=ApiResponse[ChatResponse],dependencies=[Depends(check_rate_limit)])
+@router.post("/chat/di-demo", response_model=ApiResponse[ChatResponse],dependencies=[Depends(chat_rate_limit)])
 async def chat_di_demo(
     request: ChatRequest,
     current_user: CurrentUser = Depends(get_current_user),
