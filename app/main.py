@@ -1,10 +1,18 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
+from app.redis.client import close_redis
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.middleware import register_middleware
 from app.core.exception_handlers import register_exception_handlers
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await close_redis()
 
 def create_app() -> FastAPI:
 
@@ -14,7 +22,9 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         description="python+FastAPI+LLM+Agent 开发实战",
         version=settings.app_version,
-        debug=settings.debug
+        debug=settings.debug,
+        # lifespan 写在这里
+        lifespan=lifespan,
     )
     register_middleware(app)
     register_exception_handlers(app)

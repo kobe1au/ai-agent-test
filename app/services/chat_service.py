@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 
 from app.repositories.conversation_repository import conversation_repository
 from app.core.config import settings
@@ -13,15 +14,19 @@ from app.schemas.chat import (
 )
 from app.core.exceptions import AppException, ErrorCode
 from app.core.logging import get_logger
+from app.redis.cache import (
+    cache_chat_response,
+    get_cached_chat_response
+)
 
 logger = get_logger(__name__)
 
 
 async def chat_with_ai(
         request: ChatRequest,
-        db: AsyncSession | None = None
+        db: AsyncSession | None = None,
+        redis: Redis | None = None
     ) -> ChatResponse:
-    await asyncio.sleep(0.5)
 
     latest_user_message = get_latest_user_message(request)
     model = request.model or settings.default_model
@@ -47,6 +52,30 @@ async def chat_with_ai(
         answer = "LangGraph 适合开发有状态、有分支、有流程控制的复杂 Agent。"
     else:
         answer = f"这是一个模拟回答：你刚才问的是「{latest_user_message}」。"
+        if redis:
+            cached_answer = await get_cached_chat_response(
+                redis=redis,
+                question=latest_user_message,
+            )
+
+            if cached_answer:
+                logger.info("chat_response_cache_hit")
+
+                return ChatResponse(
+                    answer=cached_answer,
+                    model=model,
+                    session_id=request.session_id,
+                    message_id=f"m_{uuid.uuid4().hex[:8]}",
+                    usage=TokenUsage(),
+                    sources=[],
+                    trace_id=f"trace_{uuid.uuid4().hex[:8]}",
+                )
+    if redis:
+        await cache_chat_response(
+            redis=redis,
+            question=latest_user_message,
+            answer=answer,
+        )
 
     usage = TokenUsage(
         prompt_tokens=count_mock_tokens_from_messages(request),

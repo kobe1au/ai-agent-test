@@ -1,5 +1,7 @@
 from fastapi import APIRouter,Depends
+from redis.asyncio import Redis
 from app.core.config import Settings, get_settings
+from app.dependencies.redis import get_redis_client
 
 router = APIRouter()
 
@@ -22,3 +24,14 @@ async def error_demo():
 
 async def get_request_source() -> str:
     return "fastapi-dependency"
+
+@router.get("/health/redis")
+async def redis_health(
+    redis: Redis = Depends(get_redis_client),
+):
+    pong = await redis.ping()
+
+    return {
+        "status": "ok" if pong else "error",
+        "redis": pong,
+    }

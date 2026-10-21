@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 
 from app.repositories.conversation_repository import conversation_repository
 from app.schemas.conversation import (
@@ -7,6 +8,7 @@ from app.schemas.conversation import (
     ConversationMessagesResponse
 )
 from app.core.exceptions import AppException, ErrorCode
+from app.redis.cache import cache_recent_messages, get_cached_recent_messages
 
 async def create_conversation(
         db: AsyncSession,
@@ -29,12 +31,24 @@ async def create_conversation(
 
 async def get_conversation_messages(
         db: AsyncSession,
-        conversation_id: str
+        conversation_id: str,
+        redis: Redis | None = None
 ) -> ConversationMessagesResponse:
+    if redis:
+        messages = await get_cached_recent_messages(redis, conversation_id)
+        if messages:
+            return ConversationMessagesResponse(
+                conversation_id=conversation_id,
+                messages=messages
+            )
+        
     messages = await conversation_repository.get_messages(
         db=db,
         conversation_id=conversation_id
     )
+
+    if redis:
+        await cache_recent_messages(redis, conversation_id, messages[-10:])
 
     return ConversationMessagesResponse(
         conversation_id=conversation_id,
