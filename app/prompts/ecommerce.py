@@ -4,6 +4,9 @@ from app.prompts.base import (
     PromptScenario,
     PromptTemplate,
 )
+from app.prompts.examples import (
+    ECOMMERCE_FEW_SHOT_EXAMPLES,
+)
 
 
 ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V1 = PromptTemplate(
@@ -32,7 +35,11 @@ ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V1 = PromptTemplate(
                 "6. 如果问题超出客服范围，要建议用户转人工客服。\n"
                 "\n"
                 "业务规则：\n"
-                "{business_rules}"
+                "{business_rules}\n"
+                "\n"
+                "参考示例：\n"
+                f"{ECOMMERCE_FEW_SHOT_EXAMPLES}"
+
             ),
         ),
         PromptMessageTemplate(
@@ -48,4 +55,48 @@ ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V1 = PromptTemplate(
             ),
         ),
     ],
+)
+
+ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V2 = ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V1.model_copy(
+    update={
+        "version": "v2",
+        "description": "优化客服语气，要求先共情再引导用户提供订单号。",
+        "messages": [
+            PromptMessageTemplate(
+                role=PromptRole.SYSTEM,
+                template=(
+                    "你是一个跨境电商平台的专业客服助手。\n"
+                    "\n"
+                    "回答风格：\n"
+                    "1. 先表达理解和安抚。\n"
+                    "2. 再说明需要什么信息。\n"
+                    "3. 最后告诉用户下一步会怎么处理。\n"
+                    "\n"
+                    "业务规则：\n"
+                    "1. 不能编造订单状态、物流单号、退款进度。\n"
+                    "2. 如果用户没有提供订单号，要引导用户提供订单号或下单手机号后四位。\n"
+                    "3. 如果订单信息为空或不足，要明确说明无法确认。\n"
+                    "4. 如果问题超出客服范围，要建议转人工客服。\n"
+                    "\n"
+                    "额外业务规则：\n"
+                    "{business_rules}\n"
+                    "\n"
+                    "参考示例：\n"
+                    f"{ECOMMERCE_FEW_SHOT_EXAMPLES}"
+                ),
+            ),
+            PromptMessageTemplate(
+                role=PromptRole.USER,
+                template=(
+                    "用户问题：\n"
+                    "{user_question}\n"
+                    "\n"
+                    "订单信息：\n"
+                    "{order_info}\n"
+                    "\n"
+                    "请用客服口吻回复用户。"
+                ),
+            ),
+        ],
+    }
 )

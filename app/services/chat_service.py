@@ -26,6 +26,8 @@ from app.llm.schemas import (
     LLMRequest,
     LLMRole
 )
+from app.prompts.base import PromptScenario
+from app.services.prompt_service import prompt_service
 
 logger = get_logger(__name__)
 
@@ -34,7 +36,7 @@ async def chat_with_ai(
     request: ChatRequest,
     db: AsyncSession | None = None,
     redis: Redis | None = None,
-    llm_provider: BaseLLMProvider | None = None,
+    llm_provider: BaseLLMProvider | None = None
 ) -> ChatResponse:
     latest_user_message = get_latest_user_message(request)
     model = request.model or settings.default_model
@@ -164,17 +166,52 @@ def build_mock_sources(question: str) -> list[SourceDocument]:
     ]
 
 def build_llm_request_from_chat_request(request: ChatRequest) -> LLMRequest:
-    messages = [
-        LLMMessage(
-            role=LLMRole.USER,
-            content=message.content,
-        )
-        for message in request.messages
-    ]
 
     return LLMRequest(
-        messages=messages,
+        messages=build_prompt_messages_for_chat(request),
         model=request.model,
         stream=request.stream,
         temperature=request.temperature,
+    )
+
+def build_prompt_messages_for_chat(request: ChatRequest) -> list[LLMMessage]:
+    has_system_message = any(
+        message.role == MessageRole.SYSTEM
+        for message in request.messages
+    )
+
+    if has_system_message:
+        return [
+            LLMMessage(
+                role=LLMRole(message.role.value),
+                content=message.content,
+            )
+            for message in request.messages
+        ]
+
+    latest_user_message = get_latest_user_message(request)
+
+    if request.prompt_scenario == PromptScenario.ECOMMERCE_CUSTOMER_SERVICE.value:
+        return prompt_service.render_by_scenario(
+            scenario=PromptScenario.ECOMMERCE_CUSTOMER_SERVICE,
+            version=request.prompt_version or "v1",
+            variables={
+                "user_question": latest_user_message,
+                "business_rules": request.metadata.get(
+                    "business_rules",
+                    "暂无额外业务规则。",
+                ),
+                "order_info": request.metadata.get(
+                    "order_info",
+                    "用户未提供订单信息。",
+                ),
+            },
+        )
+
+
+    return prompt_service.render_by_scenario(
+        scenario=PromptScenario.GENERAL_CHAT,
+        variables={
+            "user_question": latest_user_message
+        },
     )
