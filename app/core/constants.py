@@ -14,3 +14,4 @@ class ApiTag:
     MODELS = "Models"
     AGENTS = "Agents"
     PROMPTS = "Prompts"
+    STRUCTURED_OUTPUTS = "Structured Outputs"

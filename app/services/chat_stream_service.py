@@ -16,6 +16,7 @@ from app.services.chat_service import (
     get_latest_user_message
 )
 from app.utils.sse import format_done_event,format_error_event,format_sse
+from app.redis.cache import cache_chat_response,get_cached_chat_response
 
 logger = get_logger(__name__)
 
@@ -26,6 +27,45 @@ async def stream_chat_with_ai(
         redis: Redis | None = None
 ) -> AsyncGenerator[str,None]:
     latest_user_message = get_latest_user_message(request)
+
+    # 添加命中redis缓存 流式输出逻辑
+    if redis:
+        cache_answer = await get_cached_chat_response(
+            redis,
+            latest_user_message
+        )
+
+        if cache_answer:
+            logger.info("chat_stream_cache_hit")
+
+            yield format_sse(
+                event="start",
+                data={
+                    "message_id": message_id,
+                    "model": llm_request.model,
+                    "session_id": request.session_id,
+                    "cache_hit": True,
+                },
+            )
+            for part in split_text(cache_answer,size=8):
+                yield format_sse(
+                    event="message",
+                    data={
+                        "content": part,
+                        "message_id": message_id,
+                        "cache_hit": True,
+                    },
+                )
+
+            yield format_done_event(
+                {
+                    "message_id": message_id,
+                    "finish_reason": "cache_hit",
+                    "usage": final_usage.model_dump(),
+                }
+            )
+
+            return
 
     llm_request = build_llm_request_from_chat_request(request)
     llm_request.stream = True
@@ -67,8 +107,26 @@ async def stream_chat_with_ai(
                     total_tokens=chunk.usage.total_tokens
                 )
 
+
+        # 存db
         if db and request.session_id:
-            pass
+            await save_stream_messages(
+                db=db,
+                session_id=request.session_id,
+                user_message=latest_user_message,
+                assistant_message=full_answer,
+                model=llm_request.model,
+                usage=final_usage,
+            )
+
+        # 存redis
+        if redis and full_answer:
+            await cache_chat_response(
+                redis=redis,
+                question=latest_user_message,
+                answer=full_answer,
+            )
+
 
         logger.info(
             f"chat_stream_success model={llm_request.model} "
@@ -135,3 +193,9 @@ async def save_stream_messages(
         completion_tokens=usage.completion_tokens,
         total_tokens=usage.total_tokens,
     )
+
+def split_text(text: str,size: int = 8):
+    return [
+        text[index:index+size]
+        for index in range(0,len(text),size)
+    ]
