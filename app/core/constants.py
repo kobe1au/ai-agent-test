@@ -13,3 +13,4 @@ class ApiTag:
     RAG = "RAG"
     MODELS = "Models"
     AGENTS = "Agents"
+    PROMPTS = "Prompts"

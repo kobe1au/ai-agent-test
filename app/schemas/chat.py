@@ -15,9 +15,9 @@ class ChatMessage(BaseModel):
     content: str = Field(..., description="The content of the message")
 
 class TokenUsage(BaseModel):
-    completion_tokens: int = Field(..., description="The number of completion tokens used")
-    prompt_tokens: int = Field(..., description="The number of prompt tokens used")
-    total_tokens: int = Field(..., description="The total number of tokens used")
+    completion_tokens: int = Field(default=0, description="The number of completion tokens used")
+    prompt_tokens: int = Field(default=0, description="The number of prompt tokens used")
+    total_tokens: int = Field(default=0, description="The total number of tokens used")
 
 class SourceDocument(BaseModel):
     document_id: str = Field(..., description="The ID of the document")
