@@ -18,6 +18,7 @@ from app.dependencies.rate_limit import chat_rate_limit
 from app.llm.base import BaseLLMProvider
 from app.dependencies.llm import get_llm_provider
 from app.services.chat_stream_service import stream_chat_with_ai
+from app.services.tool_calling_service import tool_calling_service
 
 
 router = APIRouter()

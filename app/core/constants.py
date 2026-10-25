@@ -15,3 +15,4 @@ class ApiTag:
     AGENTS = "Agents"
     PROMPTS = "Prompts"
     STRUCTURED_OUTPUTS = "Structured Outputs"
+    TOOL_CALLING = "Tool Calling"

@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     redis_default_ttl_seconds: int = Field(default=300)
     rate_limit_window_seconds: int = Field(default=60)
     rate_limit_max_requests: int = Field(default=20)
+    default_llm_provider: str = Field(default="langchain_deepseek")
 
     openai_api_key: str = Field(default="")
     openai_base_url: str = Field(default="https://api.openai.com/v1")

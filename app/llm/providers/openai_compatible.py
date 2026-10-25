@@ -17,8 +17,12 @@ from app.llm.schemas import (
     LLMRequest,
     LLMResponse,
     LLMUsage,
-    LLMStreamChunk
+    LLMStreamChunk,
+    LLMRole,
+    LLMMessage
 )
+
+from app.llm.schemas import LLMMessage, LLMRole, LLMToolCall
 
 logger = get_logger(__name__)
 
@@ -215,11 +219,17 @@ class OpenAICompatibleProvider(BaseLLMProvider):
         if request.response_format is not None:
             payload["response_format"] = request.response_format
 
+        if request.tools:
+            payload["tools"] = request.tools
+
+        if request.tool_choice is not None:
+            payload["tool_choice"] = request.tool_choice
+
         return payload
 
     def _parse_chat_response(self, data: dict) -> LLMResponse:
-        chioce = data["choices"][0]
-        message = chioce["message"]
+        choice = data["choices"][0]
+        message = choice["message"]
 
         usage_data = data.get("usage") or {}
 
@@ -229,13 +239,42 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             total_tokens=usage_data.get("total_tokens", 0),
         )
 
+        tool_calls = self._parse_tool_calls(message)
+
         return LLMResponse(
             provider=self.provider_name,
             model=data.get("model", self.default_model),
             content=message.get("content", ""),
             usage=usage,
+            tool_calls=tool_calls,
+            finish_reason=choice.get("finish_reason"),
             raw_response=data,
         )
+
+    def _parse_tool_calls(self, message: dict) -> list[LLMToolCall]:
+        raw_tool_calls = message.get("tool_calls") or []
+        parsed_tool_calls: list[LLMToolCall] = []
+
+        for item in raw_tool_calls:
+            function = item.get("function") or {}
+            raw_arguments = function.get("arguments") or "{}"
+
+            try:
+                arguments = json.loads(raw_arguments)
+            except json.JSONDecodeError:
+                arguments = {}
+
+            parsed_tool_calls.append(
+                LLMToolCall(
+                    id=item.get("id", ""),
+                    name=function.get("name", ""),
+                    arguments=arguments,
+                    raw_arguments=raw_arguments,
+                )
+            )
+            
+        return parsed_tool_calls
+
 
     def _parse_chat_stream_chunk(self, data: dict) -> LLMStreamChunk:
         choice = data["choices"][0]
@@ -259,5 +298,14 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             raw_chunk=data,
         )
 
-    
+    def _build_message_payload(self, message: LLMMessage) -> dict:
+        payload = {
+            "role": message.role.value,
+            "content": message.content,
+        }
+
+        if message.role == LLMRole.TOOL and message.tool_call_id:
+            payload["tool_call_id"] = message.tool_call_id
+
+        return payload
 
