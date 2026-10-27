@@ -16,3 +16,6 @@ class ApiTag:
     PROMPTS = "Prompts"
     STRUCTURED_OUTPUTS = "Structured Outputs"
     TOOL_CALLING = "Tool Calling"
+    STRUCTURED_OUTPUTS = "LangChain Structured Outputs"
+    LANGCHAIN_TOOLS = "LangChain Tools"
+    LANGCHAIN_AGENTS = "LangChain Agents"

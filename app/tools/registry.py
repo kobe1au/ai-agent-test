@@ -32,7 +32,7 @@ class ToolRegistry:
 
         return tool
 
-    def list(self) -> list[ToolDefinition]:
+    def list_tools(self) -> list[ToolDefinition]:
         return list(self._tools.values())
 
     def to_openai_tools(self) -> list[dict]:

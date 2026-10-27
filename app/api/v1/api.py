@@ -9,6 +9,8 @@ from app.api.v1.agents import router as agent_router
 from app.api.v1.prompts import router as prompt_router
 from app.api.v1.structured_outputs import router as structured_output_router
 from app.api.v1.tool_calling import router as tool_calling_router
+from app.api.v1.langchain_structured_outputs import router as structured_output_router
+from app.api.v1.langchain_tools import router as tool_router
 from app.core.constants import ApiTag
 from app.dependencies.auth import verify_api_key
 
@@ -29,4 +31,12 @@ api_router.include_router(structured_output_router,tags=[ApiTag.STRUCTURED_OUTPU
 api_router.include_router(
     tool_calling_router,
     tags=[ApiTag.TOOL_CALLING],
+)
+api_router.include_router(
+    structured_output_router,
+    tags=[ApiTag.STRUCTURED_OUTPUTS],
+)
+api_router.include_router(
+    tool_router,
+    tags=[ApiTag.LANGCHAIN_TOOLS],
 )

@@ -26,7 +26,7 @@ class QueryOrderResult(BaseModel):
 
     latest_event: str | None = Field(None, description="最新物流事件")
 
-class QueryLogisticArgs(BaseModel):
+class QueryLogisticsArgs(BaseModel):
     tracking_no: str | None = Field(None, description="物流单号")
 
 # 根据单号 查询物流状态

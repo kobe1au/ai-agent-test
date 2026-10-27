@@ -8,7 +8,7 @@ ToolCallable = Callable[..., Awaitable[BaseModel] | BaseModel]
 
 class ToolDefinition(BaseModel):
     name: str = Field(...,description="工具名称")
-    desscription: str = Field(...,description="工具描述")
+    description: str = Field(...,description="工具描述")
     args_schema: type[BaseModel] = Field(...,description="参数 Schema")
     result_schema: type[BaseModel] = Field(...,description="结果 Schema")
     func: ToolCallable = Field(...,description="工具函数")

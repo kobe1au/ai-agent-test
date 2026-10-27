@@ -17,7 +17,7 @@ def main():
         "history": [],
         "user_question": "请用三句话解释 LangChain Prompt 的作用。",
     })
-
+                               
     print(result)
 
 
