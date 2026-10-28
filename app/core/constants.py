@@ -20,3 +20,4 @@ class ApiTag:
     LANGCHAIN_TOOLS = "LangChain Tools"
     LANGCHAIN_AGENTS = "LangChain Agents"
     LANGCHAIN_RAG = "LangChain RAG"
+    LANGCHAIN_AGENT_RAG = "LangChain Agent RAG"

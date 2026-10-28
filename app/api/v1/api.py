@@ -12,6 +12,8 @@ from app.api.v1.tool_calling import router as tool_calling_router
 from app.api.v1.langchain_structured_outputs import router as structured_output_router
 from app.api.v1.langchain_tools import router as tool_router
 from app.api.v1.langchain_agents import router as agent_router
+from app.api.v1.langchain_rag import router as langchain_rag_router
+from app.api.v1.langchain_agent_rag import router as langchain_agent_rag_router
 from app.core.constants import ApiTag
 from app.dependencies.auth import verify_api_key
 
@@ -44,4 +46,12 @@ api_router.include_router(
 api_router.include_router(
     agent_router,
     tags=[ApiTag.LANGCHAIN_AGENTS],
+)
+api_router.include_router(
+    langchain_rag_router,
+    tags=[ApiTag.LANGCHAIN_RAG],
+)
+api_router.include_router(
+    langchain_agent_rag_router,
+    tags=[ApiTag.LANGCHAIN_AGENT_RAG],
 )
