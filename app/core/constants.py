@@ -19,3 +19,4 @@ class ApiTag:
     STRUCTURED_OUTPUTS = "LangChain Structured Outputs"
     LANGCHAIN_TOOLS = "LangChain Tools"
     LANGCHAIN_AGENTS = "LangChain Agents"
+    LANGCHAIN_RAG = "LangChain RAG"
