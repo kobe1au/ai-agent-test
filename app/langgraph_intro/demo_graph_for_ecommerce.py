@@ -110,7 +110,7 @@ def route_after_query_order(
     return "generate_order_answer"
 
 def build_graph():
-    graph = StateGraph()
+    graph = StateGraph(EcommerceGraphState)
 
     graph.add_node("classify_intent", classify_intent_node)
     graph.add_node("extract_order_id", extract_order_id_node)
