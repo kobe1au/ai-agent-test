@@ -21,3 +21,4 @@ class ApiTag:
     LANGCHAIN_AGENTS = "LangChain Agents"
     LANGCHAIN_RAG = "LangChain RAG"
     LANGCHAIN_AGENT_RAG = "LangChain Agent RAG"
+    LANGGRAPH_PERSISTENCE = "LangGraph Persistence"
